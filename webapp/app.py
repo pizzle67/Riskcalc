@@ -215,4 +215,8 @@ def compare():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=5000, help="Port to run on")
+    args = parser.parse_args()
+    app.run(debug=True, host="0.0.0.0", port=args.port)
