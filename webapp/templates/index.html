@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open FAIR Monte Carlo Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Open FAIR Monte Carlo Calculator</h1>
+            <p class="subtitle">Quantitative Risk Analysis Tool</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Risk Scenario Input</h2>
+                <form id="risk-form">
+                    <div class="form-group">
+                        <label for="scenario-name">Scenario Name</label>
+                        <input type="text" id="scenario-name" value="Risk Scenario" placeholder="e.g., Data Breach Risk">
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Threat Event Frequency (TEF)</h3>
+                        <p class="help-text">How many times per year do threats attempt to act against assets?</p>
+
+                        <div class="distribution-select">
+                            <label>Distribution Type:</label>
+                            <select id="tef-type" onchange="toggleDistribution('tef')">
+                                <option value="pert">PERT (Min/Likely/Max)</option>
+                                <option value="constant">Constant Value</option>
+                            </select>
+                        </div>
+
+                        <div id="tef-pert" class="distribution-inputs">
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label>Minimum</label>
+                                    <input type="number" id="tef-min" value="5" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>Most Likely</label>
+                                    <input type="number" id="tef-likely" value="10" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>Maximum</label>
+                                    <input type="number" id="tef-max" value="20" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tef-constant" class="distribution-inputs" style="display: none;">
+                            <div class="input-group">
+                                <label>Value (events/year)</label>
+                                <input type="number" id="tef-value" value="10" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Vulnerability</h3>
+                        <p class="help-text">Probability that a threat event results in a loss (0-1)</p>
+
+                        <div class="distribution-select">
+                            <label>Distribution Type:</label>
+                            <select id="vuln-type" onchange="toggleDistribution('vuln')">
+                                <option value="pert">PERT (Min/Likely/Max)</option>
+                                <option value="constant">Constant Value</option>
+                            </select>
+                        </div>
+
+                        <div id="vuln-pert" class="distribution-inputs">
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label>Minimum</label>
+                                    <input type="number" id="vuln-min" value="0.1" step="0.01" min="0" max="1">
+                                </div>
+                                <div class="input-group">
+                                    <label>Most Likely</label>
+                                    <input type="number" id="vuln-likely" value="0.25" step="0.01" min="0" max="1">
+                                </div>
+                                <div class="input-group">
+                                    <label>Maximum</label>
+                                    <input type="number" id="vuln-max" value="0.5" step="0.01" min="0" max="1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="vuln-constant" class="distribution-inputs" style="display: none;">
+                            <div class="input-group">
+                                <label>Value (0-1)</label>
+                                <input type="number" id="vuln-value" value="0.25" step="0.01" min="0" max="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Loss Magnitude</h3>
+                        <p class="help-text">Financial impact per loss event ($)</p>
+
+                        <div class="distribution-select">
+                            <label>Distribution Type:</label>
+                            <select id="loss-type" onchange="toggleDistribution('loss')">
+                                <option value="lognormal">Log-Normal (Low/High Percentiles)</option>
+                                <option value="pert">PERT (Min/Likely/Max)</option>
+                                <option value="constant">Constant Value</option>
+                            </select>
+                        </div>
+
+                        <div id="loss-lognormal" class="distribution-inputs">
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label>10th Percentile ($)</label>
+                                    <input type="number" id="loss-low" value="50000" step="1000">
+                                </div>
+                                <div class="input-group">
+                                    <label>90th Percentile ($)</label>
+                                    <input type="number" id="loss-high" value="500000" step="1000">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="loss-pert" class="distribution-inputs" style="display: none;">
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label>Minimum ($)</label>
+                                    <input type="number" id="loss-min" value="10000" step="1000">
+                                </div>
+                                <div class="input-group">
+                                    <label>Most Likely ($)</label>
+                                    <input type="number" id="loss-likely" value="100000" step="1000">
+                                </div>
+                                <div class="input-group">
+                                    <label>Maximum ($)</label>
+                                    <input type="number" id="loss-max" value="500000" step="1000">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="loss-constant" class="distribution-inputs" style="display: none;">
+                            <div class="input-group">
+                                <label>Value ($)</label>
+                                <input type="number" id="loss-value" value="100000" step="1000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Simulation Settings</h3>
+                        <div class="input-group">
+                            <label>Iterations</label>
+                            <select id="iterations">
+                                <option value="1000">1,000 (Fast)</option>
+                                <option value="10000" selected>10,000 (Standard)</option>
+                                <option value="50000">50,000 (High Precision)</option>
+                                <option value="100000">100,000 (Very High Precision)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="run-btn">
+                        Run Simulation
+                    </button>
+                </form>
+            </div>
+
+            <div id="results" class="card results-card" style="display: none;">
+                <h2>Results</h2>
+
+                <div class="results-summary">
+                    <div class="stat-card primary">
+                        <div class="stat-label">Mean Annual Loss</div>
+                        <div class="stat-value" id="result-mean">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Median Annual Loss</div>
+                        <div class="stat-value" id="result-median">-</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">95% VaR</div>
+                        <div class="stat-value" id="result-var">-</div>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-label">95% CVaR</div>
+                        <div class="stat-value" id="result-cvar">-</div>
+                    </div>
+                </div>
+
+                <div class="results-details">
+                    <div class="detail-section">
+                        <h3>Percentiles</h3>
+                        <table class="results-table">
+                            <tr><td>10th Percentile</td><td id="result-p10">-</td></tr>
+                            <tr><td>25th Percentile</td><td id="result-p25">-</td></tr>
+                            <tr><td>75th Percentile</td><td id="result-p75">-</td></tr>
+                            <tr><td>90th Percentile</td><td id="result-p90">-</td></tr>
+                            <tr><td>95th Percentile</td><td id="result-p95">-</td></tr>
+                        </table>
+                    </div>
+                    <div class="detail-section">
+                        <h3>Components</h3>
+                        <table class="results-table">
+                            <tr><td>Mean LEF</td><td id="result-lef">-</td></tr>
+                            <tr><td>Mean Loss Magnitude</td><td id="result-lm">-</td></tr>
+                            <tr><td>Minimum ALE</td><td id="result-min">-</td></tr>
+                            <tr><td>Maximum ALE</td><td id="result-max">-</td></tr>
+                            <tr><td>Std Deviation</td><td id="result-std">-</td></tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <h3>Loss Distribution</h3>
+                        <canvas id="histogram-chart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Loss Exceedance Curve</h3>
+                        <canvas id="exceedance-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Based on the Open FAIR framework for quantitative risk analysis</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
