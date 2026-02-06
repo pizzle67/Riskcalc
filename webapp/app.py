@@ -21,6 +21,9 @@ from fair_monte_carlo.distributions import (
     ConstantDistribution,
 )
 
+from webapp.database import db, init_db
+from webapp.models import Scenario, SimulationResult
+
 app = Flask(__name__)
 
 
@@ -127,7 +130,8 @@ def simulate():
 
         # Run simulation
         iterations = int(data.get("iterations", 10000))
-        sim = MonteCarloSimulation(iterations=iterations, seed=42)
+        seed = int(data.get("seed", 42))
+        sim = MonteCarloSimulation(iterations=iterations, seed=seed)
         results = sim.run(model)
 
         # Prepare response data
@@ -176,11 +180,30 @@ def simulate():
                 "probabilities": (exceedance_probs[sample_indices] * 100).tolist(),
             },
             "iterations": iterations,
+            "seed": seed,
         }
 
         # Include calculated vulnerability if it was derived from TCap/RS
         if calculated_vulnerability is not None:
             response["calculated_vulnerability"] = float(calculated_vulnerability)
+
+        # Save result if requested
+        if data.get("save_result") and data.get("scenario_id"):
+            try:
+                result_record = SimulationResult(
+                    scenario_id=data["scenario_id"],
+                    iterations=iterations,
+                    seed=seed,
+                    summary_stats=response["summary"],
+                    histogram_data=response["histogram"],
+                    exceedance_data=response["exceedance"],
+                )
+                db.session.add(result_record)
+                db.session.commit()
+                response["result_id"] = result_record.id
+            except Exception as e:
+                # Log but don't fail the simulation if save fails
+                print(f"Warning: Failed to save result: {e}")
 
         return jsonify(response)
 
@@ -264,9 +287,177 @@ def compare():
         return jsonify({"success": False, "error": str(e)}), 400
 
 
+# ==================== Scenario CRUD Endpoints ====================
+
+@app.route("/api/scenarios", methods=["GET"])
+def list_scenarios():
+    """List all saved scenarios."""
+    try:
+        scenarios = Scenario.query.order_by(Scenario.updated_at.desc()).all()
+        return jsonify({
+            "success": True,
+            "scenarios": [s.to_dict() for s in scenarios]
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/scenarios", methods=["POST"])
+def create_scenario():
+    """Save a new scenario."""
+    try:
+        data = request.json
+        scenario = Scenario(
+            name=data.get("name", "Unnamed Scenario"),
+            description=data.get("description"),
+            lef_config=data.get("lef_config", {}),
+            lm_config=data.get("lm_config", {}),
+            iterations=data.get("iterations", 10000),
+        )
+        db.session.add(scenario)
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "scenario": scenario.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/scenarios/<int:scenario_id>", methods=["GET"])
+def get_scenario(scenario_id):
+    """Get a scenario by ID."""
+    try:
+        scenario = Scenario.query.get_or_404(scenario_id)
+        return jsonify({
+            "success": True,
+            "scenario": scenario.to_dict()
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 404
+
+
+@app.route("/api/scenarios/<int:scenario_id>", methods=["PUT"])
+def update_scenario(scenario_id):
+    """Update a scenario."""
+    try:
+        scenario = Scenario.query.get_or_404(scenario_id)
+        data = request.json
+
+        if "name" in data:
+            scenario.name = data["name"]
+        if "description" in data:
+            scenario.description = data["description"]
+        if "lef_config" in data:
+            scenario.lef_config = data["lef_config"]
+        if "lm_config" in data:
+            scenario.lm_config = data["lm_config"]
+        if "iterations" in data:
+            scenario.iterations = data["iterations"]
+
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "scenario": scenario.to_dict()
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/scenarios/<int:scenario_id>", methods=["DELETE"])
+def delete_scenario(scenario_id):
+    """Delete a scenario."""
+    try:
+        scenario = Scenario.query.get_or_404(scenario_id)
+        db.session.delete(scenario)
+        db.session.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+# ==================== Simulation Results Endpoints ====================
+
+@app.route("/api/scenarios/<int:scenario_id>/results", methods=["GET"])
+def get_scenario_results(scenario_id):
+    """Get all simulation results for a scenario."""
+    try:
+        # Verify scenario exists
+        Scenario.query.get_or_404(scenario_id)
+        results = SimulationResult.query.filter_by(scenario_id=scenario_id)\
+            .order_by(SimulationResult.executed_at.desc()).all()
+        return jsonify({
+            "success": True,
+            "results": [r.to_dict() for r in results]
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 404
+
+
+@app.route("/api/results", methods=["POST"])
+def save_result():
+    """Save a simulation result."""
+    try:
+        data = request.json
+
+        # Verify scenario exists
+        Scenario.query.get_or_404(data["scenario_id"])
+
+        result = SimulationResult(
+            scenario_id=data["scenario_id"],
+            iterations=data.get("iterations", 10000),
+            seed=data.get("seed"),
+            summary_stats=data.get("summary_stats", {}),
+            histogram_data=data.get("histogram_data"),
+            exceedance_data=data.get("exceedance_data"),
+        )
+        db.session.add(result)
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "result": result.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/results/<int:result_id>", methods=["GET"])
+def get_result(result_id):
+    """Get a simulation result by ID."""
+    try:
+        result = SimulationResult.query.get_or_404(result_id)
+        return jsonify({
+            "success": True,
+            "result": result.to_dict()
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 404
+
+
+@app.route("/api/results/<int:result_id>", methods=["DELETE"])
+def delete_result(result_id):
+    """Delete a simulation result."""
+    try:
+        result = SimulationResult.query.get_or_404(result_id)
+        db.session.delete(result)
+        db.session.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=5000, help="Port to run on")
     args = parser.parse_args()
+
+    # Initialize database
+    init_db(app)
+
     app.run(debug=True, host="0.0.0.0", port=args.port)

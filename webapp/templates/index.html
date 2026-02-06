@@ -15,12 +15,37 @@
         </header>
 
         <main>
+            <!-- Scenario Management Bar -->
+            <div class="card scenario-management">
+                <h3>Scenario Management</h3>
+                <div class="scenario-controls">
+                    <div class="scenario-select-group">
+                        <label for="scenario-select">Load Scenario:</label>
+                        <select id="scenario-select">
+                            <option value="">-- New Scenario --</option>
+                        </select>
+                        <button type="button" class="btn-secondary" id="load-scenario-btn" disabled>Load</button>
+                    </div>
+                    <div class="scenario-actions">
+                        <button type="button" class="btn-primary" id="save-scenario-btn">Save Scenario</button>
+                        <button type="button" class="btn-secondary" id="save-as-btn">Save As...</button>
+                        <button type="button" class="btn-danger" id="delete-scenario-btn" disabled>Delete</button>
+                    </div>
+                </div>
+                <div id="scenario-status" class="scenario-status"></div>
+            </div>
+
             <div class="card">
                 <h2>Risk Scenario Input</h2>
                 <form id="risk-form">
                     <div class="form-group">
                         <label for="scenario-name">Scenario Name</label>
                         <input type="text" id="scenario-name" value="Risk Scenario" placeholder="e.g., Data Breach Risk">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scenario-description">Description (optional)</label>
+                        <textarea id="scenario-description" rows="2" placeholder="Brief description of the scenario..."></textarea>
                     </div>
 
                     <!-- LOSS EVENT FREQUENCY SECTION -->
@@ -508,9 +533,15 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-primary" id="run-btn">
-                        Run Simulation
-                    </button>
+                    <div class="button-row">
+                        <button type="submit" class="btn-primary" id="run-btn">
+                            Run Simulation
+                        </button>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="save-result-checkbox">
+                            Save result to history
+                        </label>
+                    </div>
                 </form>
             </div>
 
@@ -574,6 +605,20 @@
                         <canvas id="exceedance-chart"></canvas>
                     </div>
                 </div>
+
+                <div id="result-saved-info" class="info-box success" style="display: none;">
+                    Result saved to history. <a href="#" id="view-history-link">View history</a>
+                </div>
+            </div>
+
+            <!-- Simulation History Panel -->
+            <div id="history-panel" class="card" style="display: none;">
+                <h2>Simulation History</h2>
+                <p class="help-text">Past simulation results for this scenario</p>
+                <div id="history-list" class="history-list">
+                    <p class="empty-state">No simulation history available</p>
+                </div>
+                <button type="button" class="btn-secondary" id="close-history-btn">Close</button>
             </div>
         </main>
 

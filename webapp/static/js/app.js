@@ -2,6 +2,8 @@
 
 let histogramChart = null;
 let exceedanceChart = null;
+let currentScenarioId = null;
+let lastSimulationData = null;
 
 // Format currency
 function formatCurrency(value) {
@@ -22,6 +24,13 @@ function formatNumber(value, decimals = 2) {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals
     });
+}
+
+// Format date for display
+function formatDate(isoString) {
+    if (!isoString) return 'Unknown';
+    const date = new Date(isoString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 }
 
 // Toggle distribution input fields
@@ -74,6 +83,276 @@ function toggleLMMode() {
 function toggleSecondaryLoss() {
     const include = document.getElementById('include-secondary').checked;
     document.getElementById('secondary-loss-inputs').style.display = include ? 'block' : 'none';
+}
+
+// Collect LEF configuration for saving
+function collectLEFConfig() {
+    const lefMode = document.querySelector('input[name="lef-mode"]:checked').value;
+    const config = { mode: lefMode };
+
+    if (lefMode === 'direct') {
+        const lefType = document.getElementById('lef-type').value;
+        config.type = lefType;
+        if (lefType === 'triangular') {
+            config.min = parseFloat(document.getElementById('lef-min').value);
+            config.likely = parseFloat(document.getElementById('lef-likely').value);
+            config.max = parseFloat(document.getElementById('lef-max').value);
+        } else if (lefType === 'pert') {
+            config.min = parseFloat(document.getElementById('lef-pert-min').value);
+            config.likely = parseFloat(document.getElementById('lef-pert-likely').value);
+            config.max = parseFloat(document.getElementById('lef-pert-max').value);
+        } else {
+            config.value = parseFloat(document.getElementById('lef-value').value);
+        }
+    } else {
+        // TEF config
+        const tefMode = document.querySelector('input[name="tef-mode"]:checked').value;
+        config.tefMode = tefMode;
+        if (tefMode === 'direct') {
+            const tefType = document.getElementById('tef-type').value;
+            config.tefType = tefType;
+            if (tefType === 'triangular') {
+                config.tefMin = parseFloat(document.getElementById('tef-min').value);
+                config.tefLikely = parseFloat(document.getElementById('tef-likely').value);
+                config.tefMax = parseFloat(document.getElementById('tef-max').value);
+            } else if (tefType === 'pert') {
+                config.tefMin = parseFloat(document.getElementById('tef-pert-min').value);
+                config.tefLikely = parseFloat(document.getElementById('tef-pert-likely').value);
+                config.tefMax = parseFloat(document.getElementById('tef-pert-max').value);
+            } else {
+                config.tefValue = parseFloat(document.getElementById('tef-value').value);
+            }
+        } else {
+            config.cfMin = parseFloat(document.getElementById('cf-min').value);
+            config.cfLikely = parseFloat(document.getElementById('cf-likely').value);
+            config.cfMax = parseFloat(document.getElementById('cf-max').value);
+            config.poaMin = parseFloat(document.getElementById('poa-min').value);
+            config.poaLikely = parseFloat(document.getElementById('poa-likely').value);
+            config.poaMax = parseFloat(document.getElementById('poa-max').value);
+        }
+
+        // Vulnerability config
+        const vulnMode = document.querySelector('input[name="vuln-mode"]:checked').value;
+        config.vulnMode = vulnMode;
+        if (vulnMode === 'direct') {
+            const vulnType = document.getElementById('vuln-type').value;
+            config.vulnType = vulnType;
+            if (vulnType === 'triangular') {
+                config.vulnMin = parseFloat(document.getElementById('vuln-min').value);
+                config.vulnLikely = parseFloat(document.getElementById('vuln-likely').value);
+                config.vulnMax = parseFloat(document.getElementById('vuln-max').value);
+            } else if (vulnType === 'pert') {
+                config.vulnMin = parseFloat(document.getElementById('vuln-pert-min').value);
+                config.vulnLikely = parseFloat(document.getElementById('vuln-pert-likely').value);
+                config.vulnMax = parseFloat(document.getElementById('vuln-pert-max').value);
+            } else {
+                config.vulnValue = parseFloat(document.getElementById('vuln-value').value);
+            }
+        } else {
+            config.tcapMin = parseFloat(document.getElementById('tcap-min').value);
+            config.tcapLikely = parseFloat(document.getElementById('tcap-likely').value);
+            config.tcapMax = parseFloat(document.getElementById('tcap-max').value);
+            config.rsMin = parseFloat(document.getElementById('rs-min').value);
+            config.rsLikely = parseFloat(document.getElementById('rs-likely').value);
+            config.rsMax = parseFloat(document.getElementById('rs-max').value);
+        }
+    }
+
+    return config;
+}
+
+// Collect LM configuration for saving
+function collectLMConfig() {
+    const lmMode = document.querySelector('input[name="lm-mode"]:checked').value;
+    const config = { mode: lmMode };
+
+    if (lmMode === 'direct') {
+        const lossType = document.getElementById('loss-type').value;
+        config.type = lossType;
+        if (lossType === 'lognormal') {
+            config.low = parseFloat(document.getElementById('loss-low').value);
+            config.high = parseFloat(document.getElementById('loss-high').value);
+        } else if (lossType === 'pert') {
+            config.min = parseFloat(document.getElementById('loss-min').value);
+            config.likely = parseFloat(document.getElementById('loss-likely').value);
+            config.max = parseFloat(document.getElementById('loss-max').value);
+        } else {
+            config.value = parseFloat(document.getElementById('loss-value').value);
+        }
+    } else {
+        const plType = document.getElementById('pl-type').value;
+        config.plType = plType;
+        if (plType === 'lognormal') {
+            config.plLow = parseFloat(document.getElementById('pl-low').value);
+            config.plHigh = parseFloat(document.getElementById('pl-high').value);
+        } else if (plType === 'pert') {
+            config.plMin = parseFloat(document.getElementById('pl-min').value);
+            config.plLikely = parseFloat(document.getElementById('pl-likely').value);
+            config.plMax = parseFloat(document.getElementById('pl-max').value);
+        } else {
+            config.plValue = parseFloat(document.getElementById('pl-value').value);
+        }
+
+        config.includeSecondary = document.getElementById('include-secondary').checked;
+        if (config.includeSecondary) {
+            config.slefMin = parseFloat(document.getElementById('slef-min').value);
+            config.slefLikely = parseFloat(document.getElementById('slef-likely').value);
+            config.slefMax = parseFloat(document.getElementById('slef-max').value);
+            config.slmLow = parseFloat(document.getElementById('slm-low').value);
+            config.slmHigh = parseFloat(document.getElementById('slm-high').value);
+        }
+    }
+
+    return config;
+}
+
+// Apply LEF configuration to form
+function applyLEFConfig(config) {
+    if (!config) return;
+
+    // Set LEF mode
+    const lefModeRadio = document.querySelector(`input[name="lef-mode"][value="${config.mode}"]`);
+    if (lefModeRadio) {
+        lefModeRadio.checked = true;
+        toggleLEFMode();
+    }
+
+    if (config.mode === 'direct') {
+        if (config.type) {
+            document.getElementById('lef-type').value = config.type;
+            toggleDistribution('lef');
+        }
+        if (config.type === 'triangular') {
+            document.getElementById('lef-min').value = config.min || 1;
+            document.getElementById('lef-likely').value = config.likely || 5;
+            document.getElementById('lef-max').value = config.max || 15;
+        } else if (config.type === 'pert') {
+            document.getElementById('lef-pert-min').value = config.min || 1;
+            document.getElementById('lef-pert-likely').value = config.likely || 5;
+            document.getElementById('lef-pert-max').value = config.max || 15;
+        } else {
+            document.getElementById('lef-value').value = config.value || 5;
+        }
+    } else {
+        // TEF
+        const tefModeRadio = document.querySelector(`input[name="tef-mode"][value="${config.tefMode}"]`);
+        if (tefModeRadio) {
+            tefModeRadio.checked = true;
+            toggleTEFMode();
+        }
+
+        if (config.tefMode === 'direct') {
+            if (config.tefType) {
+                document.getElementById('tef-type').value = config.tefType;
+                toggleDistribution('tef');
+            }
+            if (config.tefType === 'triangular') {
+                document.getElementById('tef-min').value = config.tefMin || 5;
+                document.getElementById('tef-likely').value = config.tefLikely || 10;
+                document.getElementById('tef-max').value = config.tefMax || 20;
+            } else if (config.tefType === 'pert') {
+                document.getElementById('tef-pert-min').value = config.tefMin || 5;
+                document.getElementById('tef-pert-likely').value = config.tefLikely || 10;
+                document.getElementById('tef-pert-max').value = config.tefMax || 20;
+            } else {
+                document.getElementById('tef-value').value = config.tefValue || 10;
+            }
+        } else {
+            document.getElementById('cf-min').value = config.cfMin || 50;
+            document.getElementById('cf-likely').value = config.cfLikely || 100;
+            document.getElementById('cf-max').value = config.cfMax || 200;
+            document.getElementById('poa-min').value = config.poaMin || 0.05;
+            document.getElementById('poa-likely').value = config.poaLikely || 0.10;
+            document.getElementById('poa-max').value = config.poaMax || 0.20;
+        }
+
+        // Vulnerability
+        const vulnModeRadio = document.querySelector(`input[name="vuln-mode"][value="${config.vulnMode}"]`);
+        if (vulnModeRadio) {
+            vulnModeRadio.checked = true;
+            toggleVulnMode();
+        }
+
+        if (config.vulnMode === 'direct') {
+            if (config.vulnType) {
+                document.getElementById('vuln-type').value = config.vulnType;
+                toggleDistribution('vuln');
+            }
+            if (config.vulnType === 'triangular') {
+                document.getElementById('vuln-min').value = config.vulnMin || 0.1;
+                document.getElementById('vuln-likely').value = config.vulnLikely || 0.25;
+                document.getElementById('vuln-max').value = config.vulnMax || 0.5;
+            } else if (config.vulnType === 'pert') {
+                document.getElementById('vuln-pert-min').value = config.vulnMin || 0.1;
+                document.getElementById('vuln-pert-likely').value = config.vulnLikely || 0.25;
+                document.getElementById('vuln-pert-max').value = config.vulnMax || 0.5;
+            } else {
+                document.getElementById('vuln-value').value = config.vulnValue || 0.25;
+            }
+        } else {
+            document.getElementById('tcap-min').value = config.tcapMin || 15;
+            document.getElementById('tcap-likely').value = config.tcapLikely || 55;
+            document.getElementById('tcap-max').value = config.tcapMax || 65;
+            document.getElementById('rs-min').value = config.rsMin || 10;
+            document.getElementById('rs-likely').value = config.rsLikely || 50;
+            document.getElementById('rs-max').value = config.rsMax || 60;
+        }
+    }
+}
+
+// Apply LM configuration to form
+function applyLMConfig(config) {
+    if (!config) return;
+
+    // Set LM mode
+    const lmModeRadio = document.querySelector(`input[name="lm-mode"][value="${config.mode}"]`);
+    if (lmModeRadio) {
+        lmModeRadio.checked = true;
+        toggleLMMode();
+    }
+
+    if (config.mode === 'direct') {
+        if (config.type) {
+            document.getElementById('loss-type').value = config.type;
+            toggleDistribution('loss');
+        }
+        if (config.type === 'lognormal') {
+            document.getElementById('loss-low').value = config.low || 50000;
+            document.getElementById('loss-high').value = config.high || 500000;
+        } else if (config.type === 'pert') {
+            document.getElementById('loss-min').value = config.min || 10000;
+            document.getElementById('loss-likely').value = config.likely || 100000;
+            document.getElementById('loss-max').value = config.max || 500000;
+        } else {
+            document.getElementById('loss-value').value = config.value || 100000;
+        }
+    } else {
+        if (config.plType) {
+            document.getElementById('pl-type').value = config.plType;
+            toggleDistribution('pl');
+        }
+        if (config.plType === 'lognormal') {
+            document.getElementById('pl-low').value = config.plLow || 25000;
+            document.getElementById('pl-high').value = config.plHigh || 250000;
+        } else if (config.plType === 'pert') {
+            document.getElementById('pl-min').value = config.plMin || 10000;
+            document.getElementById('pl-likely').value = config.plLikely || 75000;
+            document.getElementById('pl-max').value = config.plMax || 300000;
+        } else {
+            document.getElementById('pl-value').value = config.plValue || 75000;
+        }
+
+        document.getElementById('include-secondary').checked = config.includeSecondary || false;
+        toggleSecondaryLoss();
+
+        if (config.includeSecondary) {
+            document.getElementById('slef-min').value = config.slefMin || 0.1;
+            document.getElementById('slef-likely').value = config.slefLikely || 0.3;
+            document.getElementById('slef-max').value = config.slefMax || 0.6;
+            document.getElementById('slm-low').value = config.slmLow || 50000;
+            document.getElementById('slm-high').value = config.slmHigh || 500000;
+        }
+    }
 }
 
 // Collect form data
@@ -298,6 +577,14 @@ function displayResults(data) {
     updateHistogramChart(data.histogram);
     updateExceedanceChart(data.exceedance);
 
+    // Show saved info if result was saved
+    const savedInfoDiv = document.getElementById('result-saved-info');
+    if (data.result_id) {
+        savedInfoDiv.style.display = 'block';
+    } else {
+        savedInfoDiv.style.display = 'none';
+    }
+
     // Scroll to results
     resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -445,6 +732,12 @@ async function runSimulation(event) {
     try {
         const formData = collectFormData();
 
+        // Add save_result flag and scenario_id if saving
+        if (document.getElementById('save-result-checkbox').checked && currentScenarioId) {
+            formData.save_result = true;
+            formData.scenario_id = currentScenarioId;
+        }
+
         const response = await fetch('/api/simulate', {
             method: 'POST',
             headers: {
@@ -456,6 +749,7 @@ async function runSimulation(event) {
         const data = await response.json();
 
         if (data.success) {
+            lastSimulationData = data;
             displayResults(data);
         } else {
             alert('Error: ' + data.error);
@@ -469,7 +763,297 @@ async function runSimulation(event) {
     }
 }
 
-// Initialize
+// ==================== Scenario Management Functions ====================
+
+// Load all scenarios into dropdown
+async function loadScenarios() {
+    try {
+        const response = await fetch('/api/scenarios');
+        const data = await response.json();
+
+        if (data.success) {
+            const select = document.getElementById('scenario-select');
+            // Clear existing options except the first one
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+
+            // Add scenarios
+            data.scenarios.forEach(scenario => {
+                const option = document.createElement('option');
+                option.value = scenario.id;
+                option.textContent = scenario.name;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading scenarios:', error);
+    }
+}
+
+// Load a specific scenario
+async function loadScenario(scenarioId) {
+    if (!scenarioId) {
+        resetForm();
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/scenarios/${scenarioId}`);
+        const data = await response.json();
+
+        if (data.success) {
+            const scenario = data.scenario;
+
+            // Set basic fields
+            document.getElementById('scenario-name').value = scenario.name;
+            document.getElementById('scenario-description').value = scenario.description || '';
+            document.getElementById('iterations').value = scenario.iterations || 10000;
+
+            // Apply configurations
+            applyLEFConfig(scenario.lef_config);
+            applyLMConfig(scenario.lm_config);
+
+            // Update current scenario ID
+            currentScenarioId = scenario.id;
+
+            // Update UI state
+            updateScenarioUI();
+            showStatus('Scenario loaded successfully', 'success');
+        } else {
+            alert('Error loading scenario: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error loading scenario: ' + error.message);
+    }
+}
+
+// Save current form as scenario
+async function saveScenario(saveAsNew = false) {
+    const name = document.getElementById('scenario-name').value.trim();
+    if (!name) {
+        alert('Please enter a scenario name');
+        return;
+    }
+
+    const scenarioData = {
+        name: name,
+        description: document.getElementById('scenario-description').value.trim(),
+        lef_config: collectLEFConfig(),
+        lm_config: collectLMConfig(),
+        iterations: parseInt(document.getElementById('iterations').value)
+    };
+
+    try {
+        let response;
+        if (currentScenarioId && !saveAsNew) {
+            // Update existing scenario
+            response = await fetch(`/api/scenarios/${currentScenarioId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(scenarioData)
+            });
+        } else {
+            // Create new scenario
+            response = await fetch('/api/scenarios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(scenarioData)
+            });
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            currentScenarioId = data.scenario.id;
+            await loadScenarios();
+            document.getElementById('scenario-select').value = currentScenarioId;
+            updateScenarioUI();
+            showStatus('Scenario saved successfully', 'success');
+        } else {
+            alert('Error saving scenario: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error saving scenario: ' + error.message);
+    }
+}
+
+// Delete current scenario
+async function deleteScenario() {
+    if (!currentScenarioId) return;
+
+    if (!confirm('Are you sure you want to delete this scenario? This will also delete all associated simulation results.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/scenarios/${currentScenarioId}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            currentScenarioId = null;
+            await loadScenarios();
+            resetForm();
+            showStatus('Scenario deleted successfully', 'success');
+        } else {
+            alert('Error deleting scenario: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error deleting scenario: ' + error.message);
+    }
+}
+
+// Reset form to default state
+function resetForm() {
+    currentScenarioId = null;
+    document.getElementById('scenario-name').value = 'Risk Scenario';
+    document.getElementById('scenario-description').value = '';
+    document.getElementById('scenario-select').value = '';
+    document.getElementById('iterations').value = '10000';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('history-panel').style.display = 'none';
+
+    // Reset to defaults (could be more comprehensive)
+    updateScenarioUI();
+}
+
+// Update UI based on current scenario state
+function updateScenarioUI() {
+    const loadBtn = document.getElementById('load-scenario-btn');
+    const deleteBtn = document.getElementById('delete-scenario-btn');
+    const saveResultCheckbox = document.getElementById('save-result-checkbox');
+
+    loadBtn.disabled = !document.getElementById('scenario-select').value;
+    deleteBtn.disabled = !currentScenarioId;
+    saveResultCheckbox.disabled = !currentScenarioId;
+
+    if (!currentScenarioId) {
+        saveResultCheckbox.checked = false;
+    }
+}
+
+// Show status message
+function showStatus(message, type = 'info') {
+    const statusDiv = document.getElementById('scenario-status');
+    statusDiv.textContent = message;
+    statusDiv.className = 'scenario-status ' + type;
+    statusDiv.style.display = 'block';
+
+    setTimeout(() => {
+        statusDiv.style.display = 'none';
+    }, 3000);
+}
+
+// ==================== History Functions ====================
+
+// Load simulation history for current scenario
+async function loadHistory() {
+    if (!currentScenarioId) {
+        alert('Please save or load a scenario first');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/scenarios/${currentScenarioId}/results`);
+        const data = await response.json();
+
+        if (data.success) {
+            displayHistory(data.results);
+            document.getElementById('history-panel').style.display = 'block';
+            document.getElementById('history-panel').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            alert('Error loading history: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error loading history: ' + error.message);
+    }
+}
+
+// Display history in the panel
+function displayHistory(results) {
+    const listDiv = document.getElementById('history-list');
+
+    if (results.length === 0) {
+        listDiv.innerHTML = '<p class="empty-state">No simulation history available</p>';
+        return;
+    }
+
+    let html = '<table class="history-table"><thead><tr>';
+    html += '<th>Date</th><th>Iterations</th><th>Mean ALE</th><th>95% VaR</th><th>Actions</th>';
+    html += '</tr></thead><tbody>';
+
+    results.forEach(result => {
+        const stats = result.summary_stats || {};
+        html += `<tr>
+            <td>${formatDate(result.executed_at)}</td>
+            <td>${result.iterations.toLocaleString()}</td>
+            <td>${stats.mean ? formatCurrency(stats.mean) : '-'}</td>
+            <td>${stats.var_95 ? formatCurrency(stats.var_95) : '-'}</td>
+            <td>
+                <button class="btn-small" onclick="viewResult(${result.id})">View</button>
+                <button class="btn-small btn-danger" onclick="deleteResult(${result.id})">Delete</button>
+            </td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    listDiv.innerHTML = html;
+}
+
+// View a specific result
+async function viewResult(resultId) {
+    try {
+        const response = await fetch(`/api/results/${resultId}`);
+        const data = await response.json();
+
+        if (data.success) {
+            const result = data.result;
+            // Format data similar to simulation response
+            const displayData = {
+                success: true,
+                summary: result.summary_stats,
+                histogram: result.histogram_data,
+                exceedance: result.exceedance_data,
+                lef: { mean: 0, median: 0 },  // Not stored in history
+                lm: { mean: 0, median: 0 }    // Not stored in history
+            };
+            displayResults(displayData);
+        } else {
+            alert('Error viewing result: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error viewing result: ' + error.message);
+    }
+}
+
+// Delete a result
+async function deleteResult(resultId) {
+    if (!confirm('Are you sure you want to delete this result?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/results/${resultId}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            loadHistory();  // Refresh the list
+        } else {
+            alert('Error deleting result: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error deleting result: ' + error.message);
+    }
+}
+
+// ==================== Initialize ====================
+
 document.addEventListener('DOMContentLoaded', function() {
     // Set up form submission
     document.getElementById('risk-form').addEventListener('submit', runSimulation);
@@ -487,4 +1071,41 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleVulnMode();
     toggleLMMode();
     toggleSecondaryLoss();
+
+    // Load scenarios
+    loadScenarios();
+
+    // Scenario management event listeners
+    document.getElementById('scenario-select').addEventListener('change', function() {
+        updateScenarioUI();
+    });
+
+    document.getElementById('load-scenario-btn').addEventListener('click', function() {
+        const scenarioId = document.getElementById('scenario-select').value;
+        if (scenarioId) {
+            loadScenario(scenarioId);
+        }
+    });
+
+    document.getElementById('save-scenario-btn').addEventListener('click', function() {
+        saveScenario(false);
+    });
+
+    document.getElementById('save-as-btn').addEventListener('click', function() {
+        saveScenario(true);
+    });
+
+    document.getElementById('delete-scenario-btn').addEventListener('click', deleteScenario);
+
+    document.getElementById('view-history-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        loadHistory();
+    });
+
+    document.getElementById('close-history-btn').addEventListener('click', function() {
+        document.getElementById('history-panel').style.display = 'none';
+    });
+
+    // Initialize UI state
+    updateScenarioUI();
 });
