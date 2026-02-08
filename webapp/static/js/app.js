@@ -79,6 +79,21 @@ function toggleLMMode() {
     document.getElementById('lm-derived').style.display = mode === 'derived' ? 'block' : 'none';
 }
 
+// Toggle analysis mode (ALE vs SLE)
+function toggleAnalysisMode() {
+    const mode = document.querySelector('input[name="analysis-mode"]:checked').value;
+    const lefSection = document.querySelector('.taxonomy-section:first-of-type');
+    const helpText = document.getElementById('analysis-mode-help');
+
+    if (mode === 'sle') {
+        lefSection.classList.add('section-disabled');
+        helpText.textContent = 'SLE \u2014 loss distribution for a single event (LEF not used)';
+    } else {
+        lefSection.classList.remove('section-disabled');
+        helpText.textContent = 'ALE = LEF \u00d7 LM \u2014 expected annual loss across all events';
+    }
+}
+
 // Toggle secondary loss inputs
 function toggleSecondaryLoss() {
     const include = document.getElementById('include-secondary').checked;
@@ -87,8 +102,9 @@ function toggleSecondaryLoss() {
 
 // Collect LEF configuration for saving
 function collectLEFConfig() {
+    const analysisMode = document.querySelector('input[name="analysis-mode"]:checked').value;
     const lefMode = document.querySelector('input[name="lef-mode"]:checked').value;
-    const config = { mode: lefMode };
+    const config = { analysisMode: analysisMode, mode: lefMode };
 
     if (lefMode === 'direct') {
         const lefType = document.getElementById('lef-type').value;
@@ -209,6 +225,15 @@ function collectLMConfig() {
 // Apply LEF configuration to form
 function applyLEFConfig(config) {
     if (!config) return;
+
+    // Set analysis mode if saved
+    if (config.analysisMode) {
+        const analysisModeRadio = document.querySelector(`input[name="analysis-mode"][value="${config.analysisMode}"]`);
+        if (analysisModeRadio) {
+            analysisModeRadio.checked = true;
+            toggleAnalysisMode();
+        }
+    }
 
     // Set LEF mode
     const lefModeRadio = document.querySelector(`input[name="lef-mode"][value="${config.mode}"]`);
@@ -362,6 +387,13 @@ function collectFormData() {
         iterations: parseInt(document.getElementById('iterations').value),
     };
 
+    const analysisMode = document.querySelector('input[name="analysis-mode"]:checked').value;
+
+    // Skip LEF collection for SLE mode
+    if (analysisMode === 'sle') {
+        // Only collect LM data — jump straight to Loss Magnitude section below
+    } else {
+
     // LEF Mode
     const lefMode = document.querySelector('input[name="lef-mode"]:checked').value;
 
@@ -472,6 +504,8 @@ function collectFormData() {
         }
     }
 
+    } // end ALE-only LEF collection
+
     // Loss Magnitude Mode
     const lmMode = document.querySelector('input[name="lm-mode"]:checked').value;
 
@@ -540,9 +574,21 @@ function collectFormData() {
 }
 
 // Display results
-function displayResults(data) {
+function displayResults(data, analysisMode) {
+    analysisMode = analysisMode || 'ale';
+    const isSLE = analysisMode === 'sle';
+
     const resultsDiv = document.getElementById('results');
     resultsDiv.style.display = 'block';
+
+    // Update labels based on analysis mode
+    document.getElementById('results-title').textContent = isSLE ? 'Single Loss Event Results' : 'Results';
+    document.getElementById('label-mean').textContent = isSLE ? 'Mean Single Loss' : 'Mean Annual Loss';
+    document.getElementById('label-median').textContent = isSLE ? 'Median Single Loss' : 'Median Annual Loss';
+    document.getElementById('label-min').textContent = isSLE ? 'Minimum Loss' : 'Minimum ALE';
+    document.getElementById('label-max').textContent = isSLE ? 'Maximum Loss' : 'Maximum ALE';
+    document.getElementById('histogram-title').textContent = isSLE ? 'Single Loss Distribution' : 'Loss Distribution';
+    document.getElementById('exceedance-title').textContent = isSLE ? 'Single Loss Exceedance Curve' : 'Loss Exceedance Curve';
 
     // Summary stats
     document.getElementById('result-mean').textContent = formatCurrency(data.summary.mean);
@@ -557,9 +603,16 @@ function displayResults(data) {
     document.getElementById('result-p90').textContent = formatCurrency(data.summary.p90);
     document.getElementById('result-p95').textContent = formatCurrency(data.summary.p95);
 
-    // Components
-    document.getElementById('result-lef').textContent = formatNumber(data.lef.mean) + ' events/year';
-    document.getElementById('result-lm').textContent = formatCurrency(data.lm.mean);
+    // Components - show/hide LEF row based on mode
+    const lefRow = document.getElementById('result-lef-row');
+    if (isSLE) {
+        lefRow.style.display = 'none';
+        document.getElementById('result-lm').textContent = formatCurrency(data.summary.mean);
+    } else {
+        lefRow.style.display = '';
+        document.getElementById('result-lef').textContent = formatNumber(data.lef.mean) + ' events/year';
+        document.getElementById('result-lm').textContent = formatCurrency(data.lm.mean);
+    }
     document.getElementById('result-min').textContent = formatCurrency(data.summary.min);
     document.getElementById('result-max').textContent = formatCurrency(data.summary.max);
     document.getElementById('result-std').textContent = formatCurrency(data.summary.std);
@@ -574,8 +627,9 @@ function displayResults(data) {
     }
 
     // Update charts
-    updateHistogramChart(data.histogram);
-    updateExceedanceChart(data.exceedance);
+    const xLabel = isSLE ? 'Single Loss ($)' : 'Annual Loss ($)';
+    updateHistogramChart(data.histogram, xLabel);
+    updateExceedanceChart(data.exceedance, xLabel);
 
     // Show saved info if result was saved
     const savedInfoDiv = document.getElementById('result-saved-info');
@@ -590,7 +644,8 @@ function displayResults(data) {
 }
 
 // Create/update histogram chart
-function updateHistogramChart(histogramData) {
+function updateHistogramChart(histogramData, xLabel) {
+    xLabel = xLabel || 'Annual Loss ($)';
     const ctx = document.getElementById('histogram-chart').getContext('2d');
 
     // Calculate bin centers for x-axis labels
@@ -638,7 +693,7 @@ function updateHistogramChart(histogramData) {
                     display: true,
                     title: {
                         display: true,
-                        text: 'Annual Loss ($)'
+                        text: xLabel
                     },
                     ticks: {
                         maxTicksLimit: 8,
@@ -658,7 +713,8 @@ function updateHistogramChart(histogramData) {
 }
 
 // Create/update exceedance curve chart
-function updateExceedanceChart(exceedanceData) {
+function updateExceedanceChart(exceedanceData, xLabel) {
+    xLabel = xLabel || 'Loss Amount ($)';
     const ctx = document.getElementById('exceedance-chart').getContext('2d');
 
     if (exceedanceChart) {
@@ -699,7 +755,7 @@ function updateExceedanceChart(exceedanceData) {
                     display: true,
                     title: {
                         display: true,
-                        text: 'Loss Amount ($)'
+                        text: xLabel
                     },
                     ticks: {
                         maxTicksLimit: 8,
@@ -731,6 +787,7 @@ async function runSimulation(event) {
 
     try {
         const formData = collectFormData();
+        const analysisMode = document.querySelector('input[name="analysis-mode"]:checked').value;
 
         // Add save_result flag and scenario_id if saving
         if (document.getElementById('save-result-checkbox').checked && currentScenarioId) {
@@ -738,7 +795,9 @@ async function runSimulation(event) {
             formData.scenario_id = currentScenarioId;
         }
 
-        const response = await fetch('/api/simulate', {
+        const endpoint = analysisMode === 'sle' ? '/api/simulate-sle' : '/api/simulate';
+
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -750,7 +809,7 @@ async function runSimulation(event) {
 
         if (data.success) {
             lastSimulationData = data;
-            displayResults(data);
+            displayResults(data, analysisMode);
         } else {
             alert('Error: ' + data.error);
         }
@@ -1066,6 +1125,7 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleDistribution('pl');
 
     // Initialize mode toggles
+    toggleAnalysisMode();
     toggleLEFMode();
     toggleTEFMode();
     toggleVulnMode();

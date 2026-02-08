@@ -522,6 +522,22 @@
 
                     <div class="form-section">
                         <h3>Simulation Settings</h3>
+
+                        <div class="form-group">
+                            <label>Analysis Type</label>
+                            <div class="taxonomy-toggle">
+                                <label>
+                                    <input type="radio" name="analysis-mode" value="ale" checked onchange="toggleAnalysisMode()">
+                                    Annualized Loss (ALE)
+                                </label>
+                                <label>
+                                    <input type="radio" name="analysis-mode" value="sle" onchange="toggleAnalysisMode()">
+                                    Single Loss Event (SLE)
+                                </label>
+                            </div>
+                            <p class="help-text" id="analysis-mode-help">ALE = LEF &times; LM &mdash; expected annual loss across all events</p>
+                        </div>
+
                         <div class="input-group">
                             <label>Iterations</label>
                             <select id="iterations">
@@ -546,15 +562,15 @@
             </div>
 
             <div id="results" class="card results-card" style="display: none;">
-                <h2>Results</h2>
+                <h2 id="results-title">Results</h2>
 
                 <div class="results-summary">
                     <div class="stat-card primary">
-                        <div class="stat-label">Mean Annual Loss</div>
+                        <div class="stat-label" id="label-mean">Mean Annual Loss</div>
                         <div class="stat-value" id="result-mean">-</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Median Annual Loss</div>
+                        <div class="stat-label" id="label-median">Median Annual Loss</div>
                         <div class="stat-value" id="result-median">-</div>
                     </div>
                     <div class="stat-card warning">
@@ -581,10 +597,10 @@
                     <div class="detail-section">
                         <h3>Components</h3>
                         <table class="results-table">
-                            <tr><td>Mean LEF</td><td id="result-lef">-</td></tr>
+                            <tr id="result-lef-row"><td>Mean LEF</td><td id="result-lef">-</td></tr>
                             <tr><td>Mean Loss Magnitude</td><td id="result-lm">-</td></tr>
-                            <tr><td>Minimum ALE</td><td id="result-min">-</td></tr>
-                            <tr><td>Maximum ALE</td><td id="result-max">-</td></tr>
+                            <tr><td id="label-min">Minimum ALE</td><td id="result-min">-</td></tr>
+                            <tr><td id="label-max">Maximum ALE</td><td id="result-max">-</td></tr>
                             <tr><td>Std Deviation</td><td id="result-std">-</td></tr>
                         </table>
                     </div>
@@ -597,11 +613,11 @@
 
                 <div class="charts-container">
                     <div class="chart-wrapper">
-                        <h3>Loss Distribution</h3>
+                        <h3 id="histogram-title">Loss Distribution</h3>
                         <canvas id="histogram-chart"></canvas>
                     </div>
                     <div class="chart-wrapper">
-                        <h3>Loss Exceedance Curve</h3>
+                        <h3 id="exceedance-title">Loss Exceedance Curve</h3>
                         <canvas id="exceedance-chart"></canvas>
                     </div>
                 </div>

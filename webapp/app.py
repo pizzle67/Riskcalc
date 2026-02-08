@@ -216,6 +216,84 @@ def simulate():
         }), 400
 
 
+@app.route("/api/simulate-sle", methods=["POST"])
+def simulate_sle():
+    """Run a Single Loss Event simulation (Loss Magnitude only, no LEF)."""
+    try:
+        data = request.json
+
+        # Build a FAIR model with only LM components
+        model = FAIRModel(name=data.get("name", "Single Loss Event"))
+
+        # Handle Loss Magnitude inputs (same logic as /api/simulate)
+        if "loss" in data:
+            model.lm = parse_distribution(data["loss"])
+        elif "primary_loss" in data:
+            model.primary_loss = parse_distribution(data["primary_loss"])
+            if "secondary_loss_frequency" in data and "secondary_loss_magnitude" in data:
+                model.secondary_loss_frequency = parse_distribution(data["secondary_loss_frequency"])
+                model.secondary_loss_magnitude = parse_distribution(data["secondary_loss_magnitude"])
+        else:
+            raise ValueError("Must specify either Loss Magnitude or Primary Loss")
+
+        # Run simulation - sample LM only
+        iterations = int(data.get("iterations", 10000))
+        seed = int(data.get("seed", 42))
+        rng = np.random.default_rng(seed)
+
+        lm_samples = model.sample_lm(iterations, rng)
+
+        # Compute statistics
+        summary = {
+            "mean": float(np.mean(lm_samples)),
+            "median": float(np.median(lm_samples)),
+            "std": float(np.std(lm_samples)),
+            "min": float(np.min(lm_samples)),
+            "max": float(np.max(lm_samples)),
+            "p10": float(np.percentile(lm_samples, 10)),
+            "p25": float(np.percentile(lm_samples, 25)),
+            "p75": float(np.percentile(lm_samples, 75)),
+            "p90": float(np.percentile(lm_samples, 90)),
+            "p95": float(np.percentile(lm_samples, 95)),
+            "var_95": float(np.percentile(lm_samples, 95)),
+            "cvar_95": float(np.mean(lm_samples[lm_samples >= np.percentile(lm_samples, 95)])),
+        }
+
+        # Generate histogram data
+        hist_counts, hist_bins = np.histogram(lm_samples, bins=50)
+
+        # Generate exceedance curve data
+        sorted_lm = np.sort(lm_samples)
+        exceedance_probs = 1 - np.arange(1, len(sorted_lm) + 1) / len(sorted_lm)
+        sample_indices = np.linspace(0, len(sorted_lm) - 1, 100, dtype=int)
+
+        response = {
+            "success": True,
+            "analysis_type": "sle",
+            "summary": summary,
+            "histogram": {
+                "counts": hist_counts.tolist(),
+                "bins": hist_bins.tolist(),
+            },
+            "exceedance": {
+                "values": sorted_lm[sample_indices].tolist(),
+                "probabilities": (exceedance_probs[sample_indices] * 100).tolist(),
+            },
+            "iterations": iterations,
+            "seed": seed,
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 400
+
+
 @app.route("/api/vulnerability", methods=["POST"])
 def calculate_vuln():
     """Calculate vulnerability using the 21x21 grid simulator."""
