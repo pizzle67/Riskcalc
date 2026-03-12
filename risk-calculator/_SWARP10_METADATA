@@ -1,0 +1,7 @@
+name: risk-calculator
+type: service
+language: golang
+version: 2
+description: |
+    You would put some description on this golang service here.
+    You could make many lines

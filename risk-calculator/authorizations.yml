@@ -1,0 +1,36 @@
+# The immutable name registered with apicontrolplane-service.
+# To change the name, please read: https://app.glean.com/go/rename-apicontrolplane-service
+name: 'risk-calculator'
+
+# Service description, copied from service-descriptor.yml
+description: |-
+  A Python implementation of the Open FAIR (Factor Analysis of Information Risk) framework using Monte Carlo simulation for quantitative risk analysis.
+
+  File: https://github.rbx.com/Roblox/grc/blob/master/services/risk-calculator/authorizations.yml
+
+# Operations that should be registered under the service.
+operations:
+  # This operation is provided as an example.
+  # It matches the method name in your service controller file.
+  - 'GettingStarted'
+
+# TLS certificate configuration overrides.
+tls:
+  # IMPORTANT: .NET SERVICES MUST BE USING BEDEV2 CORE FRAMEWORK VERSION 13.102.0 OR GREATER TO USE EC CERTIFICATES. Enable EC certificates in the specified environments. Allowed values: production, sitetest1, sitetest2, sitetest3.
+  enable_ec:
+    - 'production'
+    - 'sitetest1'
+    - 'sitetest2'
+    - 'sitetest3'
+
+# PagerDuty configuration, connected to this service.
+pager_duty:
+  # PagerDuty service ID, copied from service-descriptor.yml
+  id: 'P7QO8EH'
+
+# Clients that can use the service, and for what.
+# Here's an example:
+client_authorizations:
+  - name: 'risk-calculator-component-tests'
+    operations:
+      - 'GettingStarted'
