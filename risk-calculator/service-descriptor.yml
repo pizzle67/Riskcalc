@@ -1,0 +1,22 @@
+name: risk-calculator
+description: |-
+  A Python implementation of the Open FAIR (Factor Analysis of Information Risk) framework using Monte Carlo simulation for quantitative risk analysis.
+
+
+product: grc
+repository: Roblox/grc
+code_path: services/risk-calculator
+owners:
+  - ros/2098
+  - email/grc@roblox.com
+  - slack/infosec-grc-help
+  - bot_slack/grc-ops
+  - pagerduty/91c42e825ad6420ed093d0ba2c84439e
+tags:
+  - bedev2
+  - type:http-service
+  - lang:python
+links:
+  - name: Pagerduty
+    type: pagerduty
+    url: https://roblox.pagerduty.com/service-directory/P7QO8EH
