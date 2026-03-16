@@ -1,7 +1,7 @@
 default: run
 
-ROBLOX_ENVIRONMENT := sitetest3
-ROBLOX_REGION := us-west-1
+APP_ENVIRONMENT := local
+APP_REGION := us-west-1
 
 QUIET :=
 DOCKER_COMPOSE := $(if $(shell command -v docker-compose),docker-compose,docker compose) -f docker-compose.yml
@@ -9,8 +9,7 @@ DOCKER_COMPOSE := $(if $(shell command -v docker-compose),docker-compose,docker 
 .PHONY: secrets
 secrets: templates/out
 templates/out: $(wildcard templates/*.env) Makefile
-	@$(eval SWARP_ROBLOX_REGION := $(if $(filter sitetest3 sitetest2,$(ROBLOX_ENVIRONMENT)),,--robloxRegion $(ROBLOX_REGION)))
-	@(cd ../.. && swarp secrets refresh $(ROBLOX_ENVIRONMENT) $(SWARP_ROBLOX_REGION) || (swarp login $(ROBLOX_ENVIRONMENT) $(SWARP_ROBLOX_REGION) && swarp secrets refresh $(ROBLOX_ENVIRONMENT) $(SWARP_ROBLOX_REGION)))
+	@mkdir -p templates/out
 	@touch templates/out
 
 .PHONY: ensure-env
