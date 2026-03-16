@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 """
-Gaming Platform Scenario 3: COPPA Regulatory Failure / Age-Inappropriate Content
+Online Platform Scenario 3: COPPA Regulatory Failure / Age-Inappropriate Content
 ==================================================================================
 
 THREAT SUMMARY
 --------------
-A major gaming platform's user base skews significantly toward children under 13 —
-a population protected by the Children's Online Privacy Protection Act (COPPA).
-The FTC enforces COPPA, which requires verifiable parental consent before collecting
-personal data from children, restricts targeted advertising to minors, and mandates
-honoring deletion requests. Violations can result in civil penalties, consent orders,
-and mandatory compliance programs.
+Large online platforms whose user base skews significantly toward children under 13
+face material regulatory exposure under the Children's Online Privacy Protection Act
+(COPPA). The FTC enforces COPPA, which requires verifiable parental consent before
+collecting personal data from children, restricts targeted advertising to minors,
+and mandates honoring deletion requests. Violations can result in civil penalties,
+consent orders, and mandatory compliance programs.
 
-This scenario is grounded in real FTC COPPA enforcement actions against gaming
-platforms: a $1M settlement in September 2024 against one major gaming platform for
-COPPA violations including illegal data collection from children and failure to honor
-deletion requests. The structural comparable — Epic Games (Fortnite) — settled for
-$520M in December 2022 ($275M COPPA + $245M dark patterns), establishing the upper
-bound for a gaming platform of similar architecture and user demographics.
+Real enforcement benchmarks:
+  — A major consumer platform settled with the FTC in 2024 for $1M over COPPA
+    violations including illegal data collection from children and failure to honor
+    deletion requests.
+  — Epic Games (Fortnite) settled for $520M in December 2022 ($275M COPPA +
+    $245M dark patterns), establishing the upper bound for a large consumer platform
+    of similar architecture and user demographics.
 
 This scenario models the risk of a recurring COPPA violation pattern escalating
 to an FTC enforcement action. Unlike Scenarios 1 and 2 (external attacker), the
@@ -34,7 +35,7 @@ COPPA enforcement risk is a somewhat non-standard FAIR scenario because:
 
 This scenario is most useful for:
 - Establishing a compliance investment threshold (what is it worth to prevent this?)
-- Comparing the platform's residual risk exposure pre- and post-consent order
+- Comparing residual risk exposure pre- and post-consent order
 - Benchmarking against comparable industry settlements
 
 ATTACK VECTORS / VIOLATION PATTERNS (in order of FTC enforcement relevance)
@@ -42,17 +43,18 @@ ATTACK VECTORS / VIOLATION PATTERNS (in order of FTC enforcement relevance)
 1. Targeted advertising to users self-identified as under 13
    — Ad systems that serve personalized or behaviorally targeted ads to child accounts
    — Core Epic Games COPPA violation; also documented in YouTube settlement
-   — Platform consent order (2024) explicitly restricts advertising to child accounts
+   — Platforms under consent orders are explicitly restricted from advertising
+     to child accounts
 
 2. Data collection without verifiable parental consent
    — Collecting persistent identifiers, device data, or behavioral data from under-13
      users without a COPPA-compliant consent mechanism
-   — Platform 2024 violation: failure to implement adequate age verification and
-     parental consent gates before data collection began
+   — Documented FTC violation pattern: failure to implement adequate age verification
+     and parental consent gates before data collection begins
 
 3. Failure to honor deletion requests
    — Parent or child requests account/data deletion; platform retains data
-   — Platform 2024 violation; also cited in TikTok COPPA settlement (2023: $5.4M)
+   — Cited in multiple FTC enforcement actions including TikTok (2023: $5.4M)
 
 4. Default-open communication settings for minors
    — Voice/text chat, friend requests, or contact features enabled by default for
@@ -62,7 +64,7 @@ ATTACK VECTORS / VIOLATION PATTERNS (in order of FTC enforcement relevance)
 DATA SOURCES & CITATIONS
 -------------------------
 All figures are sourced from:
-  [1] FTC v. [Major Gaming Platform], Proposed Settlement (September 2024)
+  [1] FTC enforcement action against a major consumer platform (September 2024)
       https://www.ftc.gov/news-events/news/press-releases/2024/09/ftc-takes-action-against-roblox
       — Settlement: $1,000,000; Violations: illegal data collection from children,
         failure to honor deletion requests, COPPA Rule violations
@@ -77,8 +79,7 @@ All figures are sourced from:
         • $245,000,000 — Dark patterns / unauthorized charges refunds
       — Violations: data collection from children without consent; default settings
         enabling minor exposure to voice/text contact; deceptive billing
-      — Used as structural comparable and high-end loss anchor: Fortnite / Epic is
-        the closest match to the platform in platform type, virtual economy, and user demographics
+      — Used as structural comparable and high-end loss anchor
       — NOTE: FTC.gov returns HTTP 403 to automated web fetchers. Verify at URL above.
 
   [3] FTC v. Google LLC and YouTube LLC (September 2019)
@@ -94,7 +95,7 @@ REPLACE BEFORE USING IN PRODUCTION
 TEF and vulnerability parameters below are modeled estimates — the FTC does not
 publish per-platform violation frequency data. Loss magnitude anchors ($1M floor,
 $275M ceiling) are grounded in real settlements but the lognormal distribution
-between them is an approximation. If the platform's consent order compliance program
+between them is an approximation. If a platform's consent order compliance program
 significantly reduces violation frequency, TEF should be revised downward.
 """
 
@@ -110,27 +111,27 @@ from fair_monte_carlo import (
 
 def main():
     print("=" * 70)
-    print("Gaming Platform Scenario 3: COPPA Regulatory Failure")
+    print("Online Platform Scenario 3: COPPA Regulatory Failure")
     print("=" * 70)
 
     scenario = (
-        RiskScenario("Gaming Platform — COPPA Regulatory Failure / FTC Enforcement Action")
+        RiskScenario("Online Platform — COPPA Regulatory Failure / FTC Enforcement Action")
 
         # THREAT EVENT FREQUENCY (TEF)
         # Modeled as the number of qualifying COPPA violation *patterns* per year —
         # not individual data points collected, but systemic practices that constitute
-        # an enforceable violation. On a platform of this scale (80M+ DAU, large
-        # under-13 cohort), multiple product features and data practices create
-        # concurrent exposure. The 2024 consent order narrows this somewhat, but
-        # residual risk from advertising systems and new feature development remains.
+        # an enforceable violation. On a large platform with a significant under-13
+        # cohort, multiple product features and data practices can create concurrent
+        # exposure. A consent order narrows this somewhat, but residual risk from
+        # advertising systems and new feature development remains.
         .with_tef(PERTDistribution(1, 3, 10))
 
         # VULNERABILITY
         # Probability that a qualifying violation pattern results in an FTC enforcement
         # action. FTC COPPA enforcement is relatively rare given the number of platforms
-        # with COPPA exposure — most violations go unenforced. However, post-2024
-        # consent order status elevates risk: any violation while under a consent order
-        # carries significantly higher probability of enforcement and higher penalties
+        # with COPPA exposure — most violations go unenforced. However, a post-consent
+        # order status elevates risk: any violation while under a consent order carries
+        # significantly higher probability of enforcement and higher penalties
         # (consent order violations can carry $51,744 per day per violation as of 2024).
         # Most likely estimate (5%) reflects elevated scrutiny; upper bound (15%) reflects
         # a scenario where a high-profile incident triggers an FTC investigation.
@@ -139,7 +140,7 @@ def main():
 
         # PRIMARY LOSS MAGNITUDE
         # Range anchored to real COPPA settlements:
-        #   Low:  $1,000,000  — the platform's own 2024 settlement [1]
+        #   Low:  $1,000,000  — 2024 FTC consumer platform settlement [1]
         #   High: $275,000,000 — Epic Games COPPA component (2022) [2]
         # YouTube's $170M settlement [3] sits in the mid-range and serves as
         # an implicit validation point for the distribution shape.
@@ -151,7 +152,7 @@ def main():
         # Frequency: ~75% — FTC enforcement actions almost always trigger secondary
         # costs. A consent order requires an independent compliance monitor, privacy
         # program build-out, and ongoing legal oversight. Reputational damage among
-        # parents is particularly significant for the platform given its child-safety brand.
+        # parents is particularly significant for platforms with child-heavy user bases.
         # Magnitude: Legal fees, compliance engineering, consent order monitoring,
         # public communications. Lower bound ($5M) reflects a minimal compliance
         # program; upper bound ($50M) reflects an extensive privacy engineering overhaul
@@ -220,9 +221,9 @@ def main():
     print("  severity. This is a feature of the COPPA enforcement landscape, not a bug.")
 
     print("\nData Sources:")
-    print("  [1] FTC Gaming Platform Settlement (2024): ftc.gov/news-events/news/press-releases/2024/09/...")
-    print("  [2] FTC v. Epic Games (2022):              ftc.gov/news-events/news/press-releases/2022/12/...")
-    print("  [3] FTC v. YouTube (2019):                 ftc.gov/news-events/news/press-releases/2019/09/...")
+    print("  [1] FTC consumer platform action (2024): ftc.gov/news-events/news/press-releases/2024/09/...")
+    print("  [2] FTC v. Epic Games (2022):            ftc.gov/news-events/news/press-releases/2022/12/...")
+    print("  [3] FTC v. YouTube (2019):               ftc.gov/news-events/news/press-releases/2019/09/...")
     print("  Note: FTC URLs return HTTP 403 to automated fetchers.")
     print("  Full URLs in the DATA SOURCES section of this file's docstring.")
 
