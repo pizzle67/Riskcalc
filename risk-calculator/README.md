@@ -1,18 +1,5 @@
 <div align=center>
 	<h1>risk-calculator</h1>
-	<a href="https://github.rbx.com/Roblox/grc/actions/workflows/risk-calculator-ci.yml"><img src="https://github.rbx.com/Roblox/grc/actions/workflows/risk-calculator-ci.yml/badge.svg" alt="CI"/></a>
-    <div>
-        <a href="https://mosaic.rbx.com/service/grc/risk-calculator/deployment"><img height="32" width="32" src="https://cdn.simpleicons.org/roblox" alt="Mosaic"></a>
-        &nbsp;
-        <a href="ADD RUNBOOK LINK"><img height="32" width="32" src="https://cdn.simpleicons.org/confluence" alt="Runbook"></a>
-        &nbsp;
-        <a href="https://grafana.rbx.com/d/9821686545468e77d8234e0e32d1d8a0/-managed"><img height="32" width="32" src="https://cdn.simpleicons.org/grafana" alt="Grafana"></a>
-        &nbsp;
-        
-        <a href="ADD JIRA EPIC LINK"><img height="32" width="32" src="https://cdn.simpleicons.org/jira" alt="Jira"></a>
-        &nbsp;
-        <a href="ADD PAGERDUTY SERVICE LINK"><img height="32" width="32" src="https://cdn.simpleicons.org/pagerduty" alt="PagerDuty"></a>
-    </div>
 </div>
 
 ## About

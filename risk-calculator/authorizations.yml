@@ -6,8 +6,6 @@ name: 'risk-calculator'
 description: |-
   A Python implementation of the Open FAIR (Factor Analysis of Information Risk) framework using Monte Carlo simulation for quantitative risk analysis.
 
-  File: https://github.rbx.com/Roblox/grc/blob/master/services/risk-calculator/authorizations.yml
-
 # Operations that should be registered under the service.
 operations:
   # This operation is provided as an example.

@@ -1,24 +1,14 @@
-networks:
-  default:
-    name: grc
-    external: true
-
 services:
   risk-calculator:
     container_name: risk-calculator
-    image: docker.artifactory.rbx.com/grc/risk-calculator:${TAG:-latest}
-    platform: linux/amd64
     build:
-      context: ../..
-      dockerfile: services/risk-calculator/src/Dockerfile
+      context: .
+      dockerfile: src/Dockerfile
     ports:
       - '5000:5000'
-    env_file:
-      - templates/out/service.env
     healthcheck:
       test: ["CMD", "python", "webapp/health.py"]
       interval: 10s
       timeout: 3s
       retries: 10
       start_period: 5s
-
