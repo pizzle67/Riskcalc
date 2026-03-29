@@ -2,7 +2,7 @@
 SQLAlchemy models for the Open FAIR Calculator.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from webapp.database import db
 
 
@@ -16,8 +16,8 @@ class Scenario(db.Model):
     lef_config = db.Column(db.JSON, nullable=False)
     lm_config = db.Column(db.JSON, nullable=False)
     iterations = db.Column(db.Integer, default=10000)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationship to simulation results
     results = db.relationship('SimulationResult', backref='scenario', lazy=True,
@@ -54,7 +54,7 @@ class SimulationResult(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     scenario_id = db.Column(db.Integer, db.ForeignKey('scenarios.id'), nullable=False)
-    executed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    executed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     iterations = db.Column(db.Integer, nullable=False)
     seed = db.Column(db.Integer, nullable=True)
     summary_stats = db.Column(db.JSON, nullable=False)
