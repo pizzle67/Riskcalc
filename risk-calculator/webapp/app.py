@@ -288,6 +288,81 @@ def simulate():
         }), 400
 
 
+@app.route("/api/tornado", methods=["POST"])
+def tornado():
+    """
+    Compute Spearman rank correlation between each FAIR leaf input and ALE.
+
+    Methodology:
+      1. Sample each of the seven leaf inputs from its PERT distribution.
+      2. Compute per-trial Annualized Loss Expectancy using the standard
+         FAIR chain (TEF = CF * PoA; LEF derived from TEF and a continuous
+         vulnerability proxy max(0, TC - RS); ALE = LEF * (PL + SLEF * SLM)).
+      3. For each input, compute Spearman rank correlation against ALE.
+      4. Return correlations sorted by absolute magnitude.
+
+    The continuous vulnerability proxy is used for per-trial sensitivity
+    analysis. The Open FAIR 21x21 grid produces a single scalar vulnerability
+    that does not vary trial-to-trial and therefore cannot drive correlation.
+    """
+    try:
+        from scipy.stats import spearmanr
+
+        data = request.json
+        iterations = int(data.get("iterations", 10000))
+        seed = int(data.get("seed", 42))
+        rng = np.random.default_rng(seed)
+
+        def sample(key):
+            return parse_distribution(data[key]).sample(iterations, rng)
+
+        cf   = np.maximum(sample("contact_frequency"), 0)
+        poa  = np.clip(sample("probability_of_action"),    0, 1)
+        tc   = np.clip(sample("threat_capability"),        0, 1)
+        rs   = np.clip(sample("resistance_strength"),      0, 1)
+        pl   = np.maximum(sample("primary_loss"),          0)
+        slef = np.clip(sample("secondary_loss_frequency"), 0, 1)
+        slm  = np.maximum(sample("secondary_loss_magnitude"), 0)
+
+        tef = cf * poa
+        vuln = np.maximum(tc - rs, 0.0)
+        lef = tef * vuln
+        ale = lef * (pl + slef * slm)
+
+        inputs_map = {
+            "Contact Frequency":         cf,
+            "Probability of Action":     poa,
+            "Threat Capability":         tc,
+            "Resistance Strength":       rs,
+            "Primary Loss":              pl,
+            "Secondary Loss Frequency":  slef,
+            "Secondary Loss Magnitude":  slm,
+        }
+
+        rows = []
+        for label, samples in inputs_map.items():
+            try:
+                rho, _p = spearmanr(samples, ale)
+                if not np.isfinite(rho):
+                    rho = 0.0
+            except Exception:
+                rho = 0.0
+            rows.append({"input": label, "rho": float(rho)})
+
+        rows.sort(key=lambda r: abs(r["rho"]), reverse=True)
+
+        return jsonify({
+            "success": True,
+            "iterations": iterations,
+            "seed": seed,
+            "rows": rows,
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
 @app.route("/api/simulate-sle", methods=["POST"])
 def simulate_sle():
     """Run a Single Loss Event simulation (Loss Magnitude only, no LEF)."""
