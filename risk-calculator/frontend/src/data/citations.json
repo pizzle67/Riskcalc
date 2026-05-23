@@ -1,0 +1,62 @@
+{
+  "dbir-2024": {
+    "id": "dbir-2024",
+    "apa": "Verizon. (2024). 2024 Data Breach Investigations Report. Verizon Communications. https://www.verizon.com/business/resources/reports/dbir/",
+    "url": "https://www.verizon.com/business/resources/reports/dbir/"
+  },
+  "ibm-cost-2024": {
+    "id": "ibm-cost-2024",
+    "apa": "IBM Security. (2024). Cost of a Data Breach Report 2024. IBM Corporation. https://www.ibm.com/reports/data-breach",
+    "url": "https://www.ibm.com/reports/data-breach"
+  },
+  "cyentia-iris-2024": {
+    "id": "cyentia-iris-2024",
+    "apa": "Cyentia Institute. (2024). Information Risk Insights Study 2024. Cyentia Institute. https://www.cyentia.com/iris/",
+    "url": "https://www.cyentia.com/iris/"
+  },
+  "hhs-breach-portal": {
+    "id": "hhs-breach-portal",
+    "apa": "Office for Civil Rights, U.S. Department of Health and Human Services. (n.d.). Breach Portal: Notice to the Secretary of HHS Breach of Unsecured Protected Health Information. https://ocrportal.hhs.gov/ocr/breach/breach_report.jsf",
+    "url": "https://ocrportal.hhs.gov/ocr/breach/breach_report.jsf"
+  },
+  "itrc-2024": {
+    "id": "itrc-2024",
+    "apa": "Identity Theft Resource Center. (2024). 2023 Data Breach Report. Identity Theft Resource Center. https://www.idtheftcenter.org/publication/2023-data-breach-report/",
+    "url": "https://www.idtheftcenter.org/publication/2023-data-breach-report/"
+  },
+  "cisa-kev": {
+    "id": "cisa-kev",
+    "apa": "Cybersecurity and Infrastructure Security Agency. (n.d.). Known Exploited Vulnerabilities Catalog. U.S. Department of Homeland Security. https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+  },
+  "veris-vcdb": {
+    "id": "veris-vcdb",
+    "apa": "VERIS Community Database. (n.d.). VERIS Community Database. GitHub. https://github.com/vz-risk/VCDB",
+    "url": "https://github.com/vz-risk/VCDB"
+  },
+  "prc-chronology": {
+    "id": "prc-chronology",
+    "apa": "Privacy Rights Clearinghouse. (n.d.). Data Breach Chronology. Privacy Rights Clearinghouse. https://privacyrights.org/data-breaches",
+    "url": "https://privacyrights.org/data-breaches"
+  },
+  "cisa-critical-infra": {
+    "id": "cisa-critical-infra",
+    "apa": "Cybersecurity and Infrastructure Security Agency. (n.d.). Critical Infrastructure Sectors. U.S. Department of Homeland Security. https://www.cisa.gov/topics/critical-infrastructure-security-and-resilience/critical-infrastructure-sectors",
+    "url": "https://www.cisa.gov/topics/critical-infrastructure-security-and-resilience/critical-infrastructure-sectors"
+  },
+  "coppa-rule": {
+    "id": "coppa-rule",
+    "apa": "Federal Trade Commission. (2013). Children's Online Privacy Protection Rule (COPPA). 16 C.F.R. Part 312. https://www.ftc.gov/legal-library/browse/rules/childrens-online-privacy-protection-rule-coppa",
+    "url": "https://www.ftc.gov/legal-library/browse/rules/childrens-online-privacy-protection-rule-coppa"
+  },
+  "sec-cyber-rule-2023": {
+    "id": "sec-cyber-rule-2023",
+    "apa": "U.S. Securities and Exchange Commission. (2023). Cybersecurity Risk Management, Strategy, Governance, and Incident Disclosure. Final Rule. https://www.sec.gov/files/rules/final/2023/33-11216.pdf",
+    "url": "https://www.sec.gov/files/rules/final/2023/33-11216.pdf"
+  },
+  "open-fair": {
+    "id": "open-fair",
+    "apa": "The Open Group. (2021). The Open FAIR Body of Knowledge. The Open Group. https://www.opengroup.org/forum/security/riskmanagement",
+    "url": "https://www.opengroup.org/forum/security/riskmanagement"
+  }
+}
