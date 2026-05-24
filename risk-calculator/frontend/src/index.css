@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+input,
+textarea {
+  field-sizing: content;
+}
+
+/* Print stage: holds the print-only deliverable off-screen on screen so
+   that Recharts can still measure container dimensions and lay out
+   correctly. The @media print rule below pulls it back into the document
+   flow when printing. */
+.print-stage {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 1056px;
+  pointer-events: none;
+}
+
+@media print {
+  @page {
+    size: letter landscape;
+    margin: 0.5in;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  textarea {
+    field-sizing: content;
+    overflow: visible !important;
+    max-height: none !important;
+    min-height: 7.5em !important;
+    height: auto !important;
+  }
+
+  button[role="switch"],
+  .no-print {
+    display: none !important;
+  }
+
+  /* Bring the print stage back into normal flow when printing */
+  .print-stage {
+    position: static;
+    left: auto;
+    width: auto;
+    pointer-events: auto;
+  }
+
+  /* Each top-level print section starts on a new page */
+  .print-section {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  /* Keep charts and tables intact across pages */
+  .print-keep-together {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Watermark overlay for empty result sections */
+  .print-watermark {
+    position: relative;
+  }
+  .print-watermark::after {
+    content: "Run analysis required";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-12deg);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: rgba(180, 32, 32, 0.5);
+    border: 3px dashed rgba(180, 32, 32, 0.4);
+    pointer-events: none;
+    text-transform: uppercase;
+  }
+}
+
+:root {
+  --bg: #ffffff;
+  --ink: #000000;
+  --input-blue: #1d4ed8;
+  --dial-grey: #9ca3af;
+  --button-grey: #e5e7eb;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
